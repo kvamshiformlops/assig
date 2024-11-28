@@ -1,0 +1,174 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_BLOCKS 100
+#define MAX_FILES 10
+
+typedef struct {
+    int start;
+    int length;
+} ContiguousFile;
+
+typedef struct {
+    int start;
+    int length;
+    int blocks[MAX_BLOCKS];
+} LinkedFile;
+
+typedef struct {
+    int indexBlock;
+    int blocks[MAX_BLOCKS];
+} IndexedFile;
+
+void contiguousAllocation() {
+    ContiguousFile files[MAX_FILES];
+    int memory[MAX_BLOCKS] = {0}; // 0 means free, 1 means allocated
+    int fileCount, start, length;
+
+    printf("\nContiguous Allocation\n");
+    printf("Enter number of files: ");
+    scanf("%d", &fileCount);
+
+    for (int i = 0; i < fileCount; i++) {
+        printf("Enter start block and length of file %d: ", i + 1);
+        scanf("%d%d", &start, &length);
+
+        int isAllocatable = 1;
+        for (int j = start; j < start + length; j++) {
+            if (j >= MAX_BLOCKS || memory[j] == 1) {
+                isAllocatable = 0;
+                break;
+            }
+        }
+
+        if (isAllocatable) {
+            files[i].start = start;
+            files[i].length = length;
+            for (int j = start; j < start + length; j++) {
+                memory[j] = 1;
+            }
+            printf("File %d allocated.\n", i + 1);
+        } else {
+            printf("File %d cannot be allocated.\n", i + 1);
+        }
+    }
+}
+
+void linkedAllocation() {
+    LinkedFile files[MAX_FILES];
+    int memory[MAX_BLOCKS] = {0};
+    int fileCount, length;
+
+    printf("\nLinked Allocation\n");
+    printf("Enter number of files: ");
+    scanf("%d", &fileCount);
+
+    for (int i = 0; i < fileCount; i++) {
+        printf("Enter length of file %d: ", i + 1);
+        scanf("%d", &length);
+
+        int allocated = 0;
+        for (int j = 0; j < MAX_BLOCKS; j++) {
+            if (memory[j] == 0) {
+                files[i].start = j;
+                files[i].length = length;
+                allocated = 1;
+
+                int current = j;
+                for (int k = 0; k < length; k++) {
+                    if (current >= MAX_BLOCKS || memory[current] == 1) {
+                        allocated = 0;
+                        break;
+                    }
+                    memory[current] = 1;
+                    files[i].blocks[k] = current;
+                    current++;
+                }
+                break;
+            }
+        }
+
+        if (allocated) {
+            printf("File %d allocated.\n", i + 1);
+        } else {
+            printf("File %d cannot be allocated.\n", i + 1);
+        }
+    }
+}
+
+void indexedAllocation() {
+    IndexedFile files[MAX_FILES];
+    int memory[MAX_BLOCKS] = {0};
+    int fileCount, length;
+
+    printf("\nIndexed Allocation\n");
+    printf("Enter number of files: ");
+    scanf("%d", &fileCount);
+
+    for (int i = 0; i < fileCount; i++) {
+        printf("Enter length of file %d: ", i + 1);
+        scanf("%d", &length);
+
+        int indexBlock = -1;
+        for (int j = 0; j < MAX_BLOCKS; j++) {
+            if (memory[j] == 0) {
+                indexBlock = j;
+                memory[j] = 1;
+                break;
+            }
+        }
+
+        if (indexBlock == -1) {
+            printf("File %d cannot be allocated (no index block).\n", i + 1);
+            continue;
+        }
+
+        files[i].indexBlock = indexBlock;
+        int count = 0;
+        for (int j = 0; j < MAX_BLOCKS && count < length; j++) {
+            if (memory[j] == 0) {
+                memory[j] = 1;
+                files[i].blocks[count++] = j;
+            }
+        }
+
+        if (count == length) {
+            printf("File %d allocated.\n", i + 1);
+        } else {
+            printf("File %d cannot be allocated (insufficient blocks).\n", i + 1);
+        }
+    }
+}
+
+int main() {
+    int choice;
+
+    do {
+        printf("\nFile Allocation Strategies\n");
+        printf("1. Contiguous Allocation\n");
+        printf("2. Linked Allocation\n");
+        printf("3. Indexed Allocation\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                contiguousAllocation();
+                break;
+            case 2:
+                linkedAllocation();
+                break;
+            case 3:
+                indexedAllocation();
+                break;
+            case 4:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid choice. Try again.\n");
+        }
+    } while (choice != 4);
+
+    return 0;
+}
